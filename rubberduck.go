@@ -4,6 +4,7 @@ package main
 // Make quick timestamped notes from the command line
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -103,7 +104,21 @@ func rubberduck() {
 }
 
 func config() {
-	fmt.Println("config fcn stub")
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Editor: ")
+	editor, _ := reader.ReadString('\n')
+	editor = strings.Replace(editor, "\n", "", -1)
+	editorConf := "EDITOR=" + editor
+	goyoConf := "GOYO="
+	if editor == "vim" {
+		goyoConf += "true"
+	}
+	conf := editorConf + "\n" + goyoConf + "\n"
+	f, err := os.Create("config")
+	check(err)
+	defer f.Close()
+	f.WriteString(conf)
+	f.Sync()
 }
 
 func main() {
