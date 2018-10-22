@@ -4,10 +4,13 @@ package main
 // Make quick timestamped notes from the command line
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -63,8 +66,35 @@ func stamp(f string, d string, t string) {
 	file.Sync()
 }
 
-func rubberduck(editor string, file string, goyo string) {
-	cmd := exec.Command(editor, file, goyo)
+func pullConfig() (editor string, goyo string) {
+	dat, err := ioutil.ReadFile("config")
+	check(err)
+	conf := string(dat)
+	configs := strings.Split(strings.Replace(conf, "\n", "=", -1), "=")
+	for i, val := range configs {
+		switch val {
+		case "EDITOR":
+			editor = configs[i+1]
+		case "GOYO":
+			if configs[i+1] == "true" {
+				goyo = "+Goyo"
+			}
+		}
+	}
+	return editor, goyo
+}
+
+func rubberduck() {
+	// Initialize and format current time
+	n := time.Now()
+	d, t := initDatetime(n)
+	// Initialize the note
+	f := initFile(n)
+	stamp(f, d, t)
+	// Read config
+	editor, goyo := pullConfig()
+	// Launch editor for the note
+	cmd := exec.Command(editor, f, goyo)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -72,13 +102,18 @@ func rubberduck(editor string, file string, goyo string) {
 	check(err)
 }
 
+func config() {
+	fmt.Println("config fcn stub")
+}
+
 func main() {
-	n := time.Now()
-	d, t := initDatetime(n)
-
-	f := initFile(n)
-	stamp(f, d, t)
-
-	// Launch $TERM running $EDITOR for file
-	rubberduck("vim", f, "+Goyo")
+	if len(os.Args) == 1 {
+		rubberduck()
+	} else if os.Args[1] == "config" {
+		// Run config UX
+		config()
+	} else {
+		fmt.Println("Unrecognized command")
+		os.Exit(1)
+	}
 }
