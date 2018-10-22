@@ -68,7 +68,8 @@ func stamp(f string, d string, t string) {
 }
 
 func pullConfig() (editor string, goyo string) {
-	dat, err := ioutil.ReadFile("config")
+	confPath, _ := filepath.Abs("config")
+	dat, err := ioutil.ReadFile(confPath)
 	check(err)
 	conf := string(dat)
 	configs := strings.Split(strings.Replace(conf, "\n", "=", -1), "=")
@@ -114,7 +115,8 @@ func config() {
 		goyoConf += "true"
 	}
 	conf := editorConf + "\n" + goyoConf + "\n"
-	f, err := os.Create("config")
+	confPath, _ := filepath.Abs("config")
+	f, err := os.Create(confPath)
 	check(err)
 	defer f.Close()
 	f.WriteString(conf)
