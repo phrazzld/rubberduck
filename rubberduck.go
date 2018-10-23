@@ -86,14 +86,7 @@ func pullConfig() (editor string, goyo string) {
 	return editor, goyo
 }
 
-func rubberduck() {
-	// Initialize and format current time
-	n := time.Now()
-	d, t := initDatetime(n)
-	// Initialize the note
-	f := initFile(n)
-	stamp(f, d, t)
-	// Read config
+func load(f string) {
 	editor, goyo := pullConfig()
 	// Launch editor for the note
 	cmd := exec.Command(editor, f, goyo)
@@ -102,6 +95,16 @@ func rubberduck() {
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	check(err)
+}
+
+func rubberduck() {
+	// Initialize and format current time
+	n := time.Now()
+	d, t := initDatetime(n)
+	// Initialize the note
+	f := initFile(n)
+	stamp(f, d, t)
+	load(f)
 }
 
 func config() {
@@ -123,14 +126,29 @@ func config() {
 	f.Sync()
 }
 
+func review() {
+	n := time.Now().AddDate(-1, 0, 0)
+	f := initFile(n)
+	if exists(f) {
+		load(f)
+	} else {
+		fmt.Println("No rubberduck from " + string(n.Format("2006 January 2")))
+		os.Exit(0)
+	}
+}
+
 func main() {
 	if len(os.Args) == 1 {
 		rubberduck()
-	} else if os.Args[1] == "config" {
-		// Run config UX
-		config()
 	} else {
-		fmt.Println("Unrecognized command")
-		os.Exit(1)
+		switch os.Args[1] {
+		case "config":
+			config()
+		case "review":
+			review()
+		default:
+			fmt.Println("Unrecognized command")
+			os.Exit(1)
+		}
 	}
 }
