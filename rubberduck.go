@@ -127,13 +127,22 @@ func config() {
 }
 
 func review() {
-	n := time.Now().AddDate(-1, 0, 0)
-	f := initFile(n)
-	if exists(f) {
-		load(f)
-	} else {
-		fmt.Println("No rubberduck from " + string(n.Format("2006 January 2")))
-		os.Exit(0)
+	now := time.Now()
+	dates := make([]time.Time, 0)
+	for i := -100; i < 0; i++ {
+		dates = append(dates, now.AddDate(i, 0, 0))
+	}
+	dates = append(dates, now.AddDate(0, -6, 0))
+	dates = append(dates, now.AddDate(0, -3, 0))
+	dates = append(dates, now.AddDate(0, -1, 0))
+	dates = append(dates, now.AddDate(0, 0, -7))
+	dates = append(dates, now.AddDate(0, 0, -1))
+
+	for _, date := range dates {
+		f := initFile(date)
+		if exists(f) {
+			load(f)
+		}
 	}
 }
 
