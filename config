@@ -1,2 +1,2 @@
-EDITOR=vim
-GOYO=true
+EDITOR=open
+GOYO=

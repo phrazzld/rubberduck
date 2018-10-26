@@ -70,7 +70,11 @@ func stamp(f string, d string, t string) {
 func pullConfig() (editor string, goyo string) {
 	confPath, _ := filepath.Abs("config")
 	dat, err := ioutil.ReadFile(confPath)
-	check(err)
+	if err != nil {
+		fmt.Println("Error:", err)
+		fmt.Println("No config file found! Run `rubberduck config` to create one.")
+		os.Exit(1)
+	}
 	conf := string(dat)
 	configs := strings.Split(strings.Replace(conf, "\n", "=", -1), "=")
 	for i, val := range configs {
@@ -109,12 +113,13 @@ func rubberduck() {
 
 func config() {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Editor: ")
+	fmt.Print("Editor command (vim, nano, open, ...): ")
 	editor, _ := reader.ReadString('\n')
 	editor = strings.Replace(editor, "\n", "", -1)
 	editorConf := "EDITOR=" + editor
 	goyoConf := "GOYO="
-	if editor == "vim" {
+	if editor == "vim+" {
+		editorConf = "EDITOR=vim"
 		goyoConf += "true"
 	}
 	conf := editorConf + "\n" + goyoConf + "\n"
