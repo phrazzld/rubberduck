@@ -5,7 +5,14 @@ Take and review quick notes from the command line using your favorite editor.
 
 ## Install
 
-[Set up your Go environment](https://golang.org/doc/install), then run:
+[Set up your Go environment](https://golang.org/doc/install). Make sure you have the following lines in your **.profile**:
+
+```
+export GOPATH=`go env GOPATH`
+export PATH="$PATH:$GOPATH/bin"
+```
+
+Then run:
 
 `go get github.com/phrazzld/rubberduck`
 

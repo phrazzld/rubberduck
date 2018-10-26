@@ -70,11 +70,7 @@ func stamp(f string, d string, t string) {
 func pullConfig() (editor string, goyo string) {
 	confPath, _ := filepath.Abs("config")
 	dat, err := ioutil.ReadFile(confPath)
-	if err != nil {
-		fmt.Println("Error:", err)
-		fmt.Println("No config file found! Run `rubberduck config` to create one.")
-		os.Exit(1)
-	}
+	check(err)
 	conf := string(dat)
 	configs := strings.Split(strings.Replace(conf, "\n", "=", -1), "=")
 	for i, val := range configs {
@@ -107,6 +103,11 @@ func rubberduck() {
 	d, t := initDatetime(n)
 	// Initialize the note
 	f := initFile(n)
+	confPath, _ := filepath.Abs("config")
+	if !exists(confPath) {
+		fmt.Println("No config file found! Run `rubberduck config` to create one.")
+		os.Exit(1)
+	}
 	stamp(f, d, t)
 	load(f)
 }
