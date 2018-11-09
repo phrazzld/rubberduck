@@ -68,7 +68,9 @@ func stamp(f string, d string, t string) {
 }
 
 func pullConfig() (editor string, goyo string) {
-	confPath, _ := filepath.Abs("config")
+	usr, err := user.Current()
+	check(err)
+	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
 	dat, err := ioutil.ReadFile(confPath)
 	check(err)
 	conf := string(dat)
@@ -103,7 +105,9 @@ func rubberduck() {
 	d, t := initDatetime(n)
 	// Initialize the note
 	f := initFile(n)
-	confPath, _ := filepath.Abs("config")
+	usr, err := user.Current()
+	check(err)
+	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
 	if !exists(confPath) {
 		fmt.Println("No config file found! Run `rubberduck config` to create one.")
 		os.Exit(1)
@@ -124,7 +128,9 @@ func config() {
 		goyoConf += "true"
 	}
 	conf := editorConf + "\n" + goyoConf + "\n"
-	confPath, _ := filepath.Abs("config")
+	usr, err := user.Current()
+	check(err)
+	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
 	f, err := os.Create(confPath)
 	check(err)
 	defer f.Close()
