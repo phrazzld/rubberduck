@@ -67,10 +67,7 @@ func stamp(f string, d string, t string) {
 	file.Sync()
 }
 
-func pullConfig() (editor string, goyo string) {
-	usr, err := user.Current()
-	check(err)
-	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
+func pullConfig(confPath string) (editor string, goyo string) {
 	dat, err := ioutil.ReadFile(confPath)
 	check(err)
 	conf := string(dat)
@@ -88,8 +85,8 @@ func pullConfig() (editor string, goyo string) {
 	return editor, goyo
 }
 
-func load(f string) {
-	editor, goyo := pullConfig()
+func load(f, confPath string) {
+	editor, goyo := pullConfig(confPath)
 	// Launch editor for the note
 	cmd := exec.Command(editor, f, goyo)
 	cmd.Stdin = os.Stdin
@@ -99,24 +96,21 @@ func load(f string) {
 	check(err)
 }
 
-func rubberduck() {
+func rubberduck(confPath string) {
 	// Initialize and format current time
 	n := time.Now()
 	d, t := initDatetime(n)
 	// Initialize the note
 	f := initFile(n)
-	usr, err := user.Current()
-	check(err)
-	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
 	if !exists(confPath) {
 		fmt.Println("No config file found! Run `rubberduck config` to create one.")
 		os.Exit(1)
 	}
 	stamp(f, d, t)
-	load(f)
+	load(f, confPath)
 }
 
-func config() {
+func config(confPath string) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Editor command (vim, nano, open, ...): ")
 	editor, _ := reader.ReadString('\n')
@@ -128,9 +122,6 @@ func config() {
 		goyoConf += "true"
 	}
 	conf := editorConf + "\n" + goyoConf + "\n"
-	usr, err := user.Current()
-	check(err)
-	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
 	f, err := os.Create(confPath)
 	check(err)
 	defer f.Close()
@@ -138,7 +129,7 @@ func config() {
 	f.Sync()
 }
 
-func review() {
+func review(confPath string) {
 	now := time.Now()
 	dates := make([]time.Time, 0)
 	for i := -100; i < 0; i++ {
@@ -153,20 +144,23 @@ func review() {
 	for _, date := range dates {
 		f := initFile(date)
 		if exists(f) {
-			load(f)
+			load(f, confPath)
 		}
 	}
 }
 
 func main() {
+	usr, err := user.Current()
+	check(err)
+	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
 	if len(os.Args) == 1 {
-		rubberduck()
+		rubberduck(confPath)
 	} else {
 		switch os.Args[1] {
 		case "config":
-			config()
+			config(confPath)
 		case "review":
-			review()
+			review(confPath)
 		default:
 			fmt.Println("Unrecognized command")
 			os.Exit(1)
