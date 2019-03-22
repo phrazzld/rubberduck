@@ -132,15 +132,25 @@ func config(confPath string) {
 func review(confPath string) {
 	now := time.Now()
 	dates := make([]time.Time, 0)
-	for i := -100; i < 0; i++ {
-		dates = append(dates, now.AddDate(i, 0, 0))
-	}
-	dates = append(dates, now.AddDate(0, -6, 0))
 	dates = append(dates, now.AddDate(0, -3, 0))
 	dates = append(dates, now.AddDate(0, -1, 0))
 	dates = append(dates, now.AddDate(0, 0, -7))
 	dates = append(dates, now.AddDate(0, 0, -1))
+	for _, date := range dates {
+		f := initFile(date)
+		if exists(f) {
+			load(f, confPath)
+		}
+	}
+}
 
+func reminisce(confPath string) {
+	now := time.Now()
+	dates := make([]time.Time, 0)
+	for i := -100; i < 0; i++ {
+		dates = append(dates, now.AddDate(i, 0, 0))
+	}
+	dates = append(dates, now.AddDate(0, -6, 0))
 	for _, date := range dates {
 		f := initFile(date)
 		if exists(f) {
@@ -161,6 +171,8 @@ func main() {
 			config(confPath)
 		case "review":
 			review(confPath)
+		case "reminisce":
+			reminisce(confPath)
 		default:
 			fmt.Println("Unrecognized command")
 			os.Exit(1)
