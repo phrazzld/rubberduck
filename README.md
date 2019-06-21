@@ -1,6 +1,6 @@
 # rubberduck
 
-Take and review quick notes from the command line using your favorite editor.
+Ad-hoc journaling at the command line.
 
 
 ## Install
@@ -19,18 +19,21 @@ Then run:
 
 ## Usage
 
-Set your editor (i.e., the command that runs to open your note file):
+Set your editor:
 
 `rubberduck config`
 
-Take some notes:
+Open today's entry:
 
 `rubberduck`
 
-Review past notes (default opens notes from each year ago, six months ago, three months ago, one month ago, one week ago, and yesterday):
+Review recent entries: (default opens entries from three months ago, one month ago, one week ago, and yesterday):
 
 `rubberduck review`
 
+Review old entries: (default opens entries from each year ago, and six months ago):
+
+`rubberduck reminisce`
 
 ## LICENSE
 [MIT](https://opensource.org/licenses/MIT)
