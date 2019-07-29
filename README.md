@@ -35,5 +35,16 @@ Review old entries: (default opens entries from each year ago, and six months ag
 
 `rubberduck reminisce`
 
-## LICENSE
+
+## Testing
+
+```
+go test
+go test -bench .
+go test -cover
+go test -coverprofile c.out
+go tool -cover -html=c.out
+```
+
+## License
 [MIT](https://opensource.org/licenses/MIT)

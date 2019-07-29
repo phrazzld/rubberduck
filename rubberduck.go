@@ -1,7 +1,7 @@
-package main
-
 // rubberduck
 // Make quick timestamped notes from the command line
+
+package main
 
 import (
 	"bufio"
@@ -21,12 +21,12 @@ func check(e error) {
 	}
 }
 
-func exists(file string) bool {
+// Exists takes a filepath string and checks if it exists, returning the appropriate boolean
+func Exists(file string) bool {
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		return false
-	} else {
-		return true
 	}
+	return true
 }
 
 func initDatetime(t time.Time) (date string, time string) {
@@ -35,7 +35,7 @@ func initDatetime(t time.Time) (date string, time string) {
 
 func createNotesDir(homeDir string) string {
 	notesDir := filepath.Join(homeDir, "rubberducks")
-	if !exists(notesDir) {
+	if !Exists(notesDir) {
 		err := os.MkdirAll(notesDir, 0755)
 		check(err)
 	}
@@ -53,7 +53,7 @@ func initFile(t time.Time) string {
 func stamp(f string, d string, t string) {
 	// Make (date)timestamp string
 	var stamp string
-	if !exists(f) {
+	if !Exists(f) {
 		stamp = "# " + d
 	}
 	stamp += "\n\n## " + t + "\n"
@@ -89,6 +89,15 @@ func load(f, confPath string) {
 	editor, goyo := pullConfig(confPath)
 	// Launch editor for the note
 	cmd := exec.Command(editor, f, goyo)
+	run(cmd)
+}
+
+func search(duckPath string, searchTerm []string) {
+	cmd := exec.Command("grep", strings.Join(searchTerm, " "), "-R", duckPath)
+	run(cmd)
+}
+
+func run(cmd *exec.Cmd) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -102,7 +111,7 @@ func rubberduck(confPath string) {
 	d, t := initDatetime(n)
 	// Initialize the note
 	f := initFile(n)
-	if !exists(confPath) {
+	if !Exists(confPath) {
 		fmt.Println("No config file found! Run `rubberduck config` to create one.")
 		os.Exit(1)
 	}
@@ -138,7 +147,7 @@ func review(confPath string) {
 	dates = append(dates, now.AddDate(0, 0, -1))
 	for _, date := range dates {
 		f := initFile(date)
-		if exists(f) {
+		if Exists(f) {
 			load(f, confPath)
 		}
 	}
@@ -153,7 +162,7 @@ func reminisce(confPath string) {
 	dates = append(dates, now.AddDate(0, -6, 0))
 	for _, date := range dates {
 		f := initFile(date)
-		if exists(f) {
+		if Exists(f) {
 			load(f, confPath)
 		}
 	}
@@ -162,7 +171,8 @@ func reminisce(confPath string) {
 func main() {
 	usr, err := user.Current()
 	check(err)
-	confPath := filepath.Join(usr.HomeDir, "rubberducks", "config")
+	duckPath := filepath.Join(usr.HomeDir, "rubberducks")
+	confPath := filepath.Join(duckPath, "config")
 	if len(os.Args) == 1 {
 		rubberduck(confPath)
 	} else {
@@ -173,6 +183,8 @@ func main() {
 			review(confPath)
 		case "reminisce":
 			reminisce(confPath)
+		case "search":
+			search(duckPath, os.Args[2:])
 		default:
 			fmt.Println("Unrecognized command")
 			os.Exit(1)
