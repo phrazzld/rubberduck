@@ -19,21 +19,39 @@ Then run:
 
 ## Usage
 
-Set your editor:
-
-`rubberduck config`
+### rubberduck
 
 Open today's entry:
 
 `rubberduck`
 
-Review recent entries: (default opens entries from three months ago, one month ago, one week ago, and yesterday):
+### config
+
+Set your editor:
+
+`rubberduck config`
+
+### review
+
+Review recent entries (default opens entries from three months ago, one month ago, one week ago, and yesterday):
 
 `rubberduck review`
+
+### reminisce
 
 Review old entries: (default opens entries from each year ago, and six months ago):
 
 `rubberduck reminisce`
+
+### search
+
+Search your old entries for lines containing a term, phrase, or pattern:
+
+`rubberduck search "<pattern>"`
+
+Note: `search` ignores case and returns the lines immediately trailing and following the line with the matched pattern. It is equivalent to running:
+
+`egrep "<pattern>" -R $ENTRIES_PATH --ignore-case -C 1`
 
 
 ## Testing
