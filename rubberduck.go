@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -38,20 +39,36 @@ func initFile(t time.Time) string {
 	return filepath.Join(dir, file)
 }
 
-func stamp(f string, d string, t string) {
+func stamp(f, d, t, confPath string) {
+	_, _, historyLines := pullConfig(confPath)
 	// Make (date)timestamp string
 	var stamp string
 	if !Exists(f) {
 		stamp = "# " + d
 	}
 	stamp += "\n\n## " + t
-	// Make terminal history string
-	stamp += "\n```"
-	// Add each event to the stamp
-	for _, event := range getTerminalHistory() {
-		stamp += "\n" + event
+	numLines, err := strconv.Atoi(historyLines)
+	if err != nil {
+		fmt.Println(err)
 	}
-	stamp += "\n```\n\n\n"
+	switch numLines {
+	// When set to 0, finish with the timestamp
+	case 0:
+		stamp += "\n"
+	default:
+		// When anything else, append terminal history to the stamp
+		// Make terminal history string
+		stamp += "\n```"
+		// Why not handle negative numbers under the hood when it's so inexpensive to do so?
+		if numLines < 0 {
+			numLines *= -1
+		}
+		// Add each event to the stamp
+		for _, event := range getTerminalHistory(numLines) {
+			stamp += "\n" + event
+		}
+		stamp += "\n```\n\n\n"
+	}
 	// Open file for writing
 	file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -67,7 +84,7 @@ func stamp(f string, d string, t string) {
 }
 
 // getTerminalHistory returns the output from `history` as a slice of strings
-func getTerminalHistory() []string {
+func getTerminalHistory(n int) []string {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println(err)
@@ -88,7 +105,7 @@ func getTerminalHistory() []string {
 	history := strings.Split(output.String(), "\n")
 	// Only show the last few lines of .bash_history
 	// Even that's too noisy, but I want the reminder to do more with the info
-	x := min(len(history), 5)
+	x := min(len(history), n+1)
 	return history[len(history)-x : len(history)-1]
 }
 
@@ -99,7 +116,7 @@ func min(a, b int) int {
 	return b
 }
 
-func pullConfig(confPath string) (editor string, goyo string) {
+func pullConfig(confPath string) (editor, goyo, historyLines string) {
 	dat, err := ioutil.ReadFile(confPath)
 	if err != nil {
 		fmt.Println(err)
@@ -114,13 +131,15 @@ func pullConfig(confPath string) (editor string, goyo string) {
 			if configs[i+1] == "true" {
 				goyo = "+Goyo"
 			}
+		case "HISTORY":
+			historyLines = configs[i+1]
 		}
 	}
-	return editor, goyo
+	return editor, goyo, historyLines
 }
 
 func load(f, confPath string) {
-	editor, goyo := pullConfig(confPath)
+	editor, goyo, _ := pullConfig(confPath)
 	// Launch editor for the note
 	cmd := exec.Command(editor, f, goyo)
 	cmd.Stdin = os.Stdin
@@ -143,7 +162,7 @@ func rubberduck(confPath string) {
 		os.Exit(1)
 	}
 	// Stamp with timestamp and terminal history
-	stamp(f, d, t)
+	stamp(f, d, t, confPath)
 	// Load the note
 	load(f, confPath)
 }
