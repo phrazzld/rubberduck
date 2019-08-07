@@ -44,7 +44,14 @@ func stamp(f string, d string, t string) {
 	if !Exists(f) {
 		stamp = "# " + d
 	}
-	stamp += "\n\n## " + t + "\n"
+	stamp += "\n\n## " + t
+	// Make terminal history string
+	stamp += "\n```"
+	// Add each event to the stamp
+	for _, event := range getTerminalHistory() {
+		stamp += "\n" + event
+	}
+	stamp += "\n```\n\n\n"
 	// Open file for writing
 	file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -57,6 +64,39 @@ func stamp(f string, d string, t string) {
 		fmt.Println(err)
 	}
 	file.Sync()
+}
+
+// getTerminalHistory returns the output from `history` as a slice of strings
+func getTerminalHistory() []string {
+	usr, err := user.Current()
+	if err != nil {
+		fmt.Println(err)
+	}
+	var output strings.Builder
+	// Run the "history" bash command
+	cmd := exec.Command("cat", filepath.Join(usr.HomeDir, ".bash_history"))
+	cmd.Stdin = os.Stdin
+	// Write the output to our strings.Builder
+	cmd.Stdout = &output
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println(err)
+	}
+	// Convert output to a string
+	// Then split the string on newlines
+	history := strings.Split(output.String(), "\n")
+	// Only show the last few lines of .bash_history
+	// Even that's too noisy, but I want the reminder to do more with the info
+	x := min(len(history), 5)
+	return history[len(history)-x : len(history)-1]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func pullConfig(confPath string) (editor string, goyo string) {
@@ -102,6 +142,8 @@ func rubberduck(confPath string) {
 		fmt.Println("No config file found! Run `rubberduck config` to create one.")
 		os.Exit(1)
 	}
+	// Stamp with timestamp and terminal history
 	stamp(f, d, t)
+	// Load the note
 	load(f, confPath)
 }

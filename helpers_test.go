@@ -1,4 +1,4 @@
-// Rubberduck tests, examples, and benchmarks
+// Helper tests, examples, and benchmarks
 package main
 
 import (
