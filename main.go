@@ -14,8 +14,8 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	duckPath := filepath.Join(usr.HomeDir, "rubberducks")
-	confPath := filepath.Join(duckPath, "config")
+	notesPath := filepath.Join(usr.HomeDir, "rubberducks")
+	confPath := filepath.Join(notesPath, "config")
 	if len(os.Args) == 1 {
 		rubberduck(confPath)
 	} else {
@@ -27,7 +27,7 @@ func main() {
 		case "reminisce":
 			reminisce(confPath)
 		case "search":
-			hits := search(duckPath, os.Args[2:])
+			hits := search(notesPath, os.Args[2:])
 			formatSearchResults(hits)
 		default:
 			fmt.Println("Unrecognized command")

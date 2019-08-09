@@ -4,7 +4,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/fatih/color"
+	//"github.com/fatih/color"
 	"os"
 	"os/exec"
 	"sort"
@@ -13,66 +13,116 @@ import (
 	"time"
 )
 
-func search(duckPath string, searchTerm []string) []string {
+func search(notesPath string, searchTerm []string) []string {
 	var b strings.Builder
-	cmd := exec.Command("egrep", strings.Join(searchTerm, " "), "-R", duckPath, "--ignore-case", "-C", "1")
+	// Turn `rubberduck search <term>` into:
+	// egrep <searchTerm> -R -w <notesPath> --ignore-case -C 1
+	cmd := exec.Command(
+		"egrep",
+		strings.Join(searchTerm, " "),
+		"-R",
+		"-w",
+		notesPath,
+		"--ignore-case",
+		"-C",
+		"1",
+	)
 	cmd.Stdin = os.Stdin
+	// Write output to strings.Builder
 	cmd.Stdout = &b
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err)
 	}
+	// Break each hit into a separate item in our returned slice of strings
 	hits := strings.Split(b.String(), "\n")
 	return hits
 }
 
+func pathAndContentFromResult(result string) (path, content string) {
+	x := strings.SplitAfterN(result, "md:", 2)
+	if len(x) == 1 {
+		x = strings.SplitAfterN(result, "md-", 2)
+	}
+	return x[0], x[1]
+}
+
+func sDateFromPath(path string) string {
+	xPath := strings.Split(path, "/")
+	sDate := xPath[len(xPath)-1]
+	return sDate
+}
+
+func dateFromDateString(sDate string) time.Time {
+	iYear, err := strconv.Atoi(sDate[:4])
+	if err != nil {
+		fmt.Println(err)
+	}
+	iMonth, err := strconv.Atoi(sDate[4:6])
+	if err != nil {
+		fmt.Println(err)
+	}
+	// time.Date constructor takes ints for every parameter except month
+	// That's gotta be a time.Month, so we convert here
+	month := time.Month(iMonth)
+	iDay, err := strconv.Atoi(sDate[6:8])
+	if err != nil {
+		fmt.Println(err)
+	}
+	return time.Date(iYear, month, iDay, 0, 0, 0, 0, time.UTC)
+}
+
 func formatSearchResults(results []string) {
+	// Start with a fresh empty newline
 	fmt.Println()
-	c := color.New(color.FgCyan, color.Bold)
-	var dateString string
-	var year, day int
-	var month time.Month
-	var d time.Time
+	// Build array of timestamps (aka map keys) to sort later
 	var dates timeSlice
+	//c := color.New(color.FgCyan, color.Bold)
+	// Problem: grep output is unsorted, we want results sorted by note timestamp
+	// Solution: Build map of timestamps to search results
 	entries := make(map[time.Time]string)
-	for _, v := range results {
-		if v != "" && v != "--" {
-			var err error
-			x := strings.SplitAfterN(v, "md:", 2)
-			if len(x) == 1 {
-				x = strings.SplitAfterN(v, "md-", 2)
-			}
-			path := strings.Split(x[0], "/")
-			dateString = path[len(path)-1]
-			year, err = strconv.Atoi(dateString[:4])
-			monthAsInt, err := strconv.Atoi(dateString[4:6])
-			if err != nil {
-				fmt.Println(err)
-			}
-			month = time.Month(monthAsInt)
-			day, err = strconv.Atoi(dateString[6:8])
-			if err != nil {
-				fmt.Println(err)
-			}
-			d = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-			if !containsTime(dates, d) {
-				dates = append(dates, d)
-			}
-			year, month, day = d.Date()
-			if _, ok := entries[d]; ok {
-				entries[d] += x[1] + "\n"
-			} else {
-				entries[d] = x[1] + "\n"
-			}
+	for _, result := range results {
+		if result != "" && result != "--" {
+			// Split each grep result into filename (date) and output (note content)
+			path, content := pathAndContentFromResult(result)
+			sDate := sDateFromPath(path)
+			d := dateFromDateString(sDate)
+			dates = updateTimeSlice(dates, d)
+			entries = updateEntries(entries, d, content)
 		}
 	}
+	// Sort array of timestamps
 	sort.Sort(dates)
-	for _, v := range dates {
-		y, m, d := v.Date()
-		c.Println(y, m, d)
-		fmt.Print(entries[v], "\n\n")
+	// Print each search result in order of date logged
+	for _, t := range dates {
+		printHitsForDate(t, entries)
 	}
+}
+
+func updateEntries(entries map[time.Time]string, d time.Time, content string) map[time.Time]string {
+	if _, ok := entries[d]; ok {
+		entries[d] += content + "\n"
+	} else {
+		entries[d] = content + "\n"
+	}
+	return entries
+}
+
+// Maintain timeSlice as a set
+// TODO: Embed this logic in the type definition
+// Or use a package implementation for sets
+func updateTimeSlice(dates timeSlice, d time.Time) timeSlice {
+	if !containsTime(dates, d) {
+		dates = append(dates, d)
+	}
+	return dates
+}
+
+func printHitsForDate(t time.Time, hits map[time.Time]string) {
+	y, m, d := t.Date()
+	fmt.Println(y, m, d)
+	fmt.Print(hits[t], "\n\n")
 }
 
 func containsTime(s []time.Time, t time.Time) bool {

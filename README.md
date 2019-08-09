@@ -27,7 +27,7 @@ Open today's entry:
 
 ### config
 
-Set your editor:
+Set a few preferences, including your editor and whether or not to include a few lines of terminal history in your entries:
 
 `rubberduck config`
 
@@ -49,9 +49,9 @@ Search your old entries for lines containing a term, phrase, or pattern:
 
 `rubberduck search "<pattern>"`
 
-Note: `search` ignores case and returns the lines immediately trailing and following the line with the matched pattern. It is equivalent to running:
+Note: `search` ignores case, searches for whole words, and returns the lines immediately trailing and following the line with the matched pattern. It is equivalent to running:
 
-`egrep "<pattern>" -R $ENTRIES_PATH --ignore-case -C 1`
+`egrep "<pattern>" -R -w $ENTRIES_PATH --ignore-case -C 1`
 
 
 ## Testing
