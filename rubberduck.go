@@ -40,7 +40,7 @@ func initFile(t time.Time) string {
 }
 
 func stamp(f, d, t, confPath string) {
-	_, _, historyLines := pullConfig(confPath)
+	historyLines, historyFile := pullHistoryConfig(confPath)
 	// Make (date)timestamp string
 	var stamp string
 	if !Exists(f) {
@@ -54,7 +54,7 @@ func stamp(f, d, t, confPath string) {
 	switch numLines {
 	// When set to 0, finish with the timestamp
 	case 0:
-		stamp += "\n"
+		stamp += "\n\n\n"
 	default:
 		// When anything else, append terminal history to the stamp
 		// Make terminal history string
@@ -64,7 +64,7 @@ func stamp(f, d, t, confPath string) {
 			numLines *= -1
 		}
 		// Add each event to the stamp
-		for _, event := range getTerminalHistory(numLines) {
+		for _, event := range getTerminalHistory(numLines, historyFile) {
 			stamp += "\n" + event
 		}
 		stamp += "\n```\n\n\n"
@@ -84,14 +84,14 @@ func stamp(f, d, t, confPath string) {
 }
 
 // getTerminalHistory returns the output from `history` as a slice of strings
-func getTerminalHistory(n int) []string {
+func getTerminalHistory(n int, historyFile string) []string {
 	usr, err := user.Current()
 	if err != nil {
 		fmt.Println(err)
 	}
 	var output strings.Builder
 	// Run the "history" bash command
-	cmd := exec.Command("cat", filepath.Join(usr.HomeDir, ".bash_history"))
+	cmd := exec.Command("cat", filepath.Join(usr.HomeDir, historyFile))
 	cmd.Stdin = os.Stdin
 	// Write the output to our strings.Builder
 	cmd.Stdout = &output
@@ -103,8 +103,7 @@ func getTerminalHistory(n int) []string {
 	// Convert output to a string
 	// Then split the string on newlines
 	history := strings.Split(output.String(), "\n")
-	// Only show the last few lines of .bash_history
-	// Even that's too noisy, but I want the reminder to do more with the info
+	// Only show the last few lines of history
 	x := min(len(history), n+1)
 	return history[len(history)-x : len(history)-1]
 }
@@ -116,30 +115,41 @@ func min(a, b int) int {
 	return b
 }
 
-func pullConfig(confPath string) (editor, goyo, historyLines string) {
-	dat, err := ioutil.ReadFile(confPath)
+func pullHistoryConfig(configPath string) (numLines, historyFile string) {
+	configs := convertConfigFileToIterable(configPath)
+	for i, val := range configs {
+		if val == "HISTORY_FILE" {
+			historyFile = configs[i+1]
+		} else if val == "HISTORY_LINES" {
+			numLines = configs[i+1]
+		}
+	}
+	return numLines, historyFile
+}
+
+func pullEditorConfig(configPath string) (editor, goyo string) {
+	configs := convertConfigFileToIterable(configPath)
+	for i, val := range configs {
+		if val == "EDITOR" {
+			editor = configs[i+1]
+		} else if val == "GOYO" && configs[i+1] == "true" {
+			goyo = "+Goyo"
+		}
+	}
+	return editor, goyo
+}
+
+func convertConfigFileToIterable(configPath string) (configs []string) {
+	f, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		fmt.Println(err)
 	}
-	conf := string(dat)
-	configs := strings.Split(strings.Replace(conf, "\n", "=", -1), "=")
-	for i, val := range configs {
-		switch val {
-		case "EDITOR":
-			editor = configs[i+1]
-		case "GOYO":
-			if configs[i+1] == "true" {
-				goyo = "+Goyo"
-			}
-		case "HISTORY":
-			historyLines = configs[i+1]
-		}
-	}
-	return editor, goyo, historyLines
+	configs = strings.Split(strings.Replace(string(f), "\n", "=", -1), "=")
+	return configs
 }
 
 func load(f, confPath string) {
-	editor, goyo, _ := pullConfig(confPath)
+	editor, goyo := pullEditorConfig(confPath)
 	// Launch editor for the note
 	cmd := exec.Command(editor, f, goyo)
 	cmd.Stdin = os.Stdin

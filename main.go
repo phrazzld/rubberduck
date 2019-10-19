@@ -1,4 +1,5 @@
 // rubberduck/main.go
+// Ad-hoc journaling at the command line.
 
 package main
 
