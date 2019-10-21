@@ -4,12 +4,10 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -39,18 +37,19 @@ func initFile(t time.Time) string {
 	return filepath.Join(dir, file)
 }
 
-func stamp(f, d, t, confPath string) {
-	historyLines, historyFile := pullHistoryConfig(confPath)
+func stamp(f, d, t, configPath string) error {
+	conf, err := loadConfiguration(configPath)
+	if err != nil {
+		return err
+	}
+	numLines := conf.TerminalHistoryNumLines
+	historyFile := conf.TerminalHistoryFile
 	// Make (date)timestamp string
 	var stamp string
 	if !Exists(f) {
 		stamp = "# " + d
 	}
 	stamp += "\n\n## " + t
-	numLines, err := strconv.Atoi(historyLines)
-	if err != nil {
-		fmt.Println(err)
-	}
 	switch numLines {
 	// When set to 0, finish with the timestamp
 	case 0:
@@ -72,15 +71,16 @@ func stamp(f, d, t, confPath string) {
 	// Open file for writing
 	file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	defer file.Close()
 	// Stamp it
 	_, err = file.WriteString(stamp)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 	file.Sync()
+	return err
 }
 
 // getTerminalHistory returns the output from `history` as a slice of strings
@@ -115,64 +115,40 @@ func min(a, b int) int {
 	return b
 }
 
-func pullHistoryConfig(configPath string) (numLines, historyFile string) {
-	configs := convertConfigFileToIterable(configPath)
-	for i, val := range configs {
-		if val == "HISTORY_FILE" {
-			historyFile = configs[i+1]
-		} else if val == "HISTORY_LINES" {
-			numLines = configs[i+1]
-		}
-	}
-	return numLines, historyFile
-}
-
-func pullEditorConfig(configPath string) (editor, goyo string) {
-	configs := convertConfigFileToIterable(configPath)
-	for i, val := range configs {
-		if val == "EDITOR" {
-			editor = configs[i+1]
-		} else if val == "GOYO" && configs[i+1] == "true" {
-			goyo = "+Goyo"
-		}
-	}
-	return editor, goyo
-}
-
-func convertConfigFileToIterable(configPath string) (configs []string) {
-	f, err := ioutil.ReadFile(configPath)
+func load(f, configPath string) error {
+	conf, err := loadConfiguration(configPath)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	configs = strings.Split(strings.Replace(string(f), "\n", "=", -1), "=")
-	return configs
-}
-
-func load(f, confPath string) {
-	editor, goyo := pullEditorConfig(confPath)
+	editor := conf.Editor
+	editorOpts := conf.EditorOpts
 	// Launch editor for the note
-	cmd := exec.Command(editor, f, goyo)
+	cmd := exec.Command(editor, f, editorOpts)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	return err
 }
 
-func rubberduck(confPath string) {
+func rubberduck(configPath string) error {
 	// Initialize and format current time
 	n := time.Now()
 	d, t := initDatetime(n)
 	// Initialize the note
 	f := initFile(n)
-	if !Exists(confPath) {
-		fmt.Println("No config file found! Run `rubberduck config` to create one.")
-		os.Exit(1)
-	}
 	// Stamp with timestamp and terminal history
-	stamp(f, d, t, confPath)
+	err := stamp(f, d, t, configPath)
+	if err != nil {
+		return err
+	}
 	// Load the note
-	load(f, confPath)
+	err = load(f, configPath)
+	if err != nil {
+		return err
+	}
+	return err
 }

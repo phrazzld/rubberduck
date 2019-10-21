@@ -53,6 +53,12 @@ Note: `search` ignores case, searches for whole words, and returns the lines imm
 
 `egrep "<pattern>" -R -w $ENTRIES_PATH --ignore-case -C 1`
 
+### goodnight
+
+Talk through the day's ups and downs, and plan for tomorrow.
+
+`rubberduck goodnight`
+
 
 ## Testing
 
