@@ -3,13 +3,10 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
+	"os/exec"
 )
 
 type Config struct {
@@ -19,42 +16,6 @@ type Config struct {
 	TerminalHistoryFile     string   `json:"terminalHistoryFile"`
 	TerminalHistoryNumLines int      `json:"terminalHistoryNumLines"`
 	GoodnightPrompts        []string `json:"goodnightPrompts"`
-}
-
-func (conf *Config) SetEditor(editor string, configPath string) error {
-	conf.Editor = editor
-	err := writeConfigObjectToFile(*conf, configPath)
-	return err
-}
-
-func (conf *Config) SetEditorOpts(editorOpts string, configPath string) error {
-	conf.EditorOpts = editorOpts
-	err := writeConfigObjectToFile(*conf, configPath)
-	return err
-}
-
-func (conf *Config) SetTerminalHistoryEnabled(enabled bool, configPath string) error {
-	conf.TerminalHistoryEnabled = enabled
-	err := writeConfigObjectToFile(*conf, configPath)
-	return err
-}
-
-func (conf *Config) SetTerminalHistoryFile(historyFile string, configPath string) error {
-	conf.TerminalHistoryFile = historyFile
-	err := writeConfigObjectToFile(*conf, configPath)
-	return err
-}
-
-func (conf *Config) SetTerminalHistoryNumLines(numLines int, configPath string) error {
-	conf.TerminalHistoryNumLines = numLines
-	err := writeConfigObjectToFile(*conf, configPath)
-	return err
-}
-
-func (conf *Config) SetGoodnightPrompts(prompts []string, configPath string) error {
-	conf.GoodnightPrompts = prompts
-	err := writeConfigObjectToFile(*conf, configPath)
-	return err
 }
 
 func writeConfigObjectToFile(conf Config, configPath string) error {
@@ -68,15 +29,17 @@ func writeConfigObjectToFile(conf Config, configPath string) error {
 
 func setDefaultConfiguration(configPath string) error {
 	conf := Config{
-		Editor:                  "vim",
-		EditorOpts:              "",
-		TerminalHistoryEnabled:  false,
-		TerminalHistoryFile:     "",
-		TerminalHistoryNumLines: 0,
+		Editor:                  "nvim",
+		EditorOpts:              "+Goyo",
+		TerminalHistoryEnabled:  true,
+		TerminalHistoryFile:     ".zsh_history",
+		TerminalHistoryNumLines: 4,
 		GoodnightPrompts: []string{
 			"What did you achieve today?",
 			"What could you have done better?",
-			"What are you going to do tomorrow?",
+			"How far did you run today?",
+			"What's something you learned?",
+			"What are you going to accomplish tomorrow?",
 		},
 	}
 	err := writeConfigObjectToFile(conf, configPath)
@@ -101,125 +64,18 @@ func loadConfiguration(configPath string) (Config, error) {
 	return conf, err
 }
 
-func configEditor(configPath string, reader *bufio.Reader, conf Config) (Config, error) {
-	fmt.Print("Editor command (vim, nano, open, ...): ")
-	editor, err := reader.ReadString('\n')
-	if err != nil {
-		return conf, err
-	}
-	editor = stripNewlines(editor)
-	conf.SetEditor(editor, configPath)
-	fmt.Print("Editor options/flags: ")
-	editorOpts, err := reader.ReadString('\n')
-	if err != nil {
-		return conf, err
-	}
-	editorOpts = stripNewlines(editorOpts)
-	conf.SetEditorOpts(editorOpts, configPath)
-	err = writeConfigObjectToFile(conf, configPath)
-	return conf, err
-}
-
-func stripNewlines(s string) string {
-	return strings.Replace(s, "\n", "", -1)
-}
-
-func configTerminalHistory(configPath string, reader *bufio.Reader, conf Config) (Config, error) {
-	fmt.Print("Enable terminal history in journal entries? (y/n): ")
-	enableHistory, err := reader.ReadString('\n')
-	if err != nil {
-		return conf, err
-	}
-	enableHistory = strings.ToLower(stripNewlines(enableHistory))
-	switch enableHistory {
-	case "n":
-		conf.SetTerminalHistoryEnabled(false, configPath)
-		conf.SetTerminalHistoryFile("", configPath)
-		conf.SetTerminalHistoryNumLines(0, configPath)
-	case "y":
-		conf.SetTerminalHistoryEnabled(true, configPath)
-		fmt.Print("What is the name of your history file? (.bash_history, .zsh_history, ...): ")
-		historyFile, err := reader.ReadString('\n')
-		if err != nil {
-			return conf, err
-		}
-		historyFile = stripNewlines(historyFile)
-		conf.SetTerminalHistoryFile(historyFile, configPath)
-		fmt.Print("Lines of history to include: ")
-		numLinesStr, err := reader.ReadString('\n')
-		if err != nil {
-			return conf, err
-		}
-		numLinesStr = stripNewlines(numLinesStr)
-		numLines, err := strconv.Atoi(numLinesStr)
-		if err != nil {
-			return conf, err
-		}
-		conf.SetTerminalHistoryNumLines(numLines, configPath)
-	default:
-		fmt.Println("y/n: It means \"Enter the character 'y' or the character 'n'\"")
-	}
-	err = writeConfigObjectToFile(conf, configPath)
-	return conf, err
-}
-
-func configGoodnightPrompts(configPath string, reader *bufio.Reader, conf Config) (Config, error) {
-	var prompts []string
-	fmt.Print("Add a goodnight prompt? (y/n): ")
-	addPrompt, err := reader.ReadString('\n')
-	if err != nil {
-		return conf, err
-	}
-	adding := ynToBool(addPrompt)
-	for adding {
-		fmt.Print("Prompt: ")
-		prompt, err := reader.ReadString('\n')
-		if err != nil {
-			return conf, err
-		}
-		prompt = stripNewlines(prompt)
-		prompts = append(prompts, prompt)
-		fmt.Print("Add another goodnight prompt? (y/n): ")
-		addPrompt, err := reader.ReadString('\n')
-		if err != nil {
-			return conf, err
-		}
-		adding = ynToBool(addPrompt)
-	}
-	conf.SetGoodnightPrompts(prompts, configPath)
-	return conf, err
-}
-
-func ynToBool(yn string) bool {
-	yn = strings.ToLower(stripNewlines(yn))
-	if yn == "y" {
-		return true
-	}
-	return false
-}
-
 func config(configPath string) error {
-	reader := bufio.NewReader(os.Stdin)
 	conf, err := loadConfiguration(configPath)
 	if err != nil {
 		return err
 	}
-	// Configure editor
-	conf, err = configEditor(configPath, reader, conf)
+	cmd := exec.Command(conf.Editor, configPath)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}
-	// Toggle terminal history in stamps
-	conf, err = configTerminalHistory(configPath, reader, conf)
-	if err != nil {
-		return err
-	}
-	// Ask for goodnight prompts
-	conf, err = configGoodnightPrompts(configPath, reader, conf)
-	if err != nil {
-		return err
-	}
-	// Save config to file
-	err = writeConfigObjectToFile(conf, configPath)
 	return err
 }
