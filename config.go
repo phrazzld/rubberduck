@@ -14,6 +14,7 @@ import (
 
 type Config struct {
 	Editor                  string   `json:"editor"`
+	EditorOpts              string   `json:"editorOpts"`
 	TerminalHistoryEnabled  bool     `json:"terminalHistoryEnabled"`
 	TerminalHistoryFile     string   `json:"terminalHistoryFile"`
 	TerminalHistoryNumLines int      `json:"terminalHistoryNumLines"`
@@ -22,6 +23,12 @@ type Config struct {
 
 func (conf *Config) SetEditor(editor string, configPath string) error {
 	conf.Editor = editor
+	err := writeConfigObjectToFile(*conf, configPath)
+	return err
+}
+
+func (conf *Config) SetEditorOpts(editorOpts string, configPath string) error {
+	conf.EditorOpts = editorOpts
 	err := writeConfigObjectToFile(*conf, configPath)
 	return err
 }
@@ -62,6 +69,7 @@ func writeConfigObjectToFile(conf Config, configPath string) error {
 func setDefaultConfiguration(configPath string) error {
 	conf := Config{
 		Editor:                  "vim",
+		EditorOpts:              "",
 		TerminalHistoryEnabled:  false,
 		TerminalHistoryFile:     "",
 		TerminalHistoryNumLines: 0,
@@ -101,12 +109,19 @@ func configEditor(configPath string, reader *bufio.Reader, conf Config) (Config,
 	}
 	editor = stripNewlines(editor)
 	conf.SetEditor(editor, configPath)
+	fmt.Print("Editor options/flags: ")
+	editorOpts, err := reader.ReadString('\n')
+	if err != nil {
+		return conf, err
+	}
+	editorOpts = stripNewlines(editorOpts)
+	conf.SetEditorOpts(editorOpts, configPath)
 	err = writeConfigObjectToFile(conf, configPath)
 	return conf, err
 }
 
 func stripNewlines(s string) string {
-	return strings.ToLower(strings.Replace(s, "\n", "", -1))
+	return strings.Replace(s, "\n", "", -1)
 }
 
 func configTerminalHistory(configPath string, reader *bufio.Reader, conf Config) (Config, error) {
@@ -115,7 +130,7 @@ func configTerminalHistory(configPath string, reader *bufio.Reader, conf Config)
 	if err != nil {
 		return conf, err
 	}
-	enableHistory = stripNewlines(enableHistory)
+	enableHistory = strings.ToLower(stripNewlines(enableHistory))
 	switch enableHistory {
 	case "n":
 		conf.SetTerminalHistoryEnabled(false, configPath)

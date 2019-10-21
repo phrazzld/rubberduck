@@ -121,8 +121,9 @@ func load(f, configPath string) error {
 		return err
 	}
 	editor := conf.Editor
+	editorOpts := conf.EditorOpts
 	// Launch editor for the note
-	cmd := exec.Command(editor, f)
+	cmd := exec.Command(editor, f, editorOpts)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
