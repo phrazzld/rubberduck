@@ -3,7 +3,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
@@ -16,25 +15,29 @@ func initDatetime(t time.Time) (date string, time string) {
 	return t.Format("2006 January 2"), t.Format("15:04:05")
 }
 
-func createNotesDir(homeDir string) string {
-	notesDir := filepath.Join(homeDir, "rubberducks")
+func createNotesDir(homeDir string) (notesDir string, err error) {
+	notesDir = filepath.Join(homeDir, "rubberducks")
 	if !Exists(notesDir) {
 		err := os.MkdirAll(notesDir, 0755)
 		if err != nil {
-			fmt.Println(err)
+			return notesDir, err
 		}
 	}
-	return notesDir
+	return notesDir, err
 }
 
-func initFile(t time.Time) string {
+func initFile(t time.Time) (f string, err error) {
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println(err)
+		return f, err
 	}
-	dir := createNotesDir(usr.HomeDir)
+	dir, err := createNotesDir(usr.HomeDir)
+	if err != nil {
+		return f, err
+	}
 	file := t.Format("20060102") + ".md"
-	return filepath.Join(dir, file)
+	f = filepath.Join(dir, file)
+	return f, err
 }
 
 func stamp(f, d, t, configPath string) error {
@@ -63,7 +66,11 @@ func stamp(f, d, t, configPath string) error {
 			numLines *= -1
 		}
 		// Add each event to the stamp
-		for _, event := range getTerminalHistory(numLines, historyFile) {
+		terminalHistory, err := getTerminalHistory(numLines, historyFile)
+		if err != nil {
+			return err
+		}
+		for _, event := range terminalHistory {
 			stamp += "\n" + event
 		}
 		stamp += "\n```\n\n\n"
@@ -84,10 +91,10 @@ func stamp(f, d, t, configPath string) error {
 }
 
 // getTerminalHistory returns the output from `history` as a slice of strings
-func getTerminalHistory(n int, historyFile string) []string {
+func getTerminalHistory(n int, historyFile string) (terminalHistory []string, err error) {
 	usr, err := user.Current()
 	if err != nil {
-		fmt.Println(err)
+		return terminalHistory, err
 	}
 	var output strings.Builder
 	// Run the "history" bash command
@@ -98,21 +105,15 @@ func getTerminalHistory(n int, historyFile string) []string {
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println(err)
+		return terminalHistory, err
 	}
 	// Convert output to a string
 	// Then split the string on newlines
 	history := strings.Split(output.String(), "\n")
 	// Only show the last few lines of history
 	x := min(len(history), n+1)
-	return history[len(history)-x : len(history)-1]
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+	terminalHistory = history[len(history)-x : len(history)-1]
+	return terminalHistory, err
 }
 
 func load(f, configPath string) error {
@@ -134,14 +135,17 @@ func load(f, configPath string) error {
 	return err
 }
 
-func rubberduck(configPath string) error {
+func rubberduck(configPath string) (err error) {
 	// Initialize and format current time
 	n := time.Now()
 	d, t := initDatetime(n)
 	// Initialize the note
-	f := initFile(n)
+	f, err := initFile(n)
+	if err != nil {
+		return err
+	}
 	// Stamp with timestamp and terminal history
-	err := stamp(f, d, t, configPath)
+	err = stamp(f, d, t, configPath)
 	if err != nil {
 		return err
 	}

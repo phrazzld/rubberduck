@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func search(notesPath string, searchTerm []string) []string {
+func search(notesPath string, searchTerm []string) (hits []string, err error) {
 	var b strings.Builder
 	// Turn `rubberduck search <term>` into:
 	// egrep <searchTerm> -R -w <notesPath> --ignore-case -C 1
@@ -30,13 +30,13 @@ func search(notesPath string, searchTerm []string) []string {
 	// Write output to strings.Builder
 	cmd.Stdout = &b
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		fmt.Println(err)
+		return hits, err
 	}
 	// Break each hit into a separate item in our returned slice of strings
-	hits := strings.Split(b.String(), "\n")
-	return hits
+	hits = strings.Split(b.String(), "\n")
+	return hits, err
 }
 
 func pathAndContentFromResult(result string) (path, content string) {
@@ -53,26 +53,27 @@ func sDateFromPath(path string) string {
 	return sDate
 }
 
-func dateFromDateString(sDate string) time.Time {
+func dateFromDateString(sDate string) (d time.Time, err error) {
 	iYear, err := strconv.Atoi(sDate[:4])
 	if err != nil {
-		fmt.Println(err)
+		return d, err
 	}
 	iMonth, err := strconv.Atoi(sDate[4:6])
 	if err != nil {
-		fmt.Println(err)
+		return d, err
 	}
 	// time.Date constructor takes ints for every parameter except month
 	// That's gotta be a time.Month, so we convert here
 	month := time.Month(iMonth)
 	iDay, err := strconv.Atoi(sDate[6:8])
 	if err != nil {
-		fmt.Println(err)
+		return d, err
 	}
-	return time.Date(iYear, month, iDay, 0, 0, 0, 0, time.UTC)
+	d = time.Date(iYear, month, iDay, 0, 0, 0, 0, time.UTC)
+	return d, err
 }
 
-func formatSearchResults(results []string) {
+func formatSearchResults(results []string) (err error) {
 	// Start with a fresh empty newline
 	fmt.Println()
 	// Build array of timestamps (aka map keys) to sort later
@@ -86,7 +87,10 @@ func formatSearchResults(results []string) {
 			// Split each grep result into filename (date) and output (note content)
 			path, content := pathAndContentFromResult(result)
 			sDate := sDateFromPath(path)
-			d := dateFromDateString(sDate)
+			d, err := dateFromDateString(sDate)
+			if err != nil {
+				return err
+			}
 			dates = updateTimeSlice(dates, d)
 			entries = updateEntries(entries, d, content)
 		}
@@ -97,6 +101,7 @@ func formatSearchResults(results []string) {
 	for _, t := range dates {
 		printHitsForDate(t, entries)
 	}
+	return err
 }
 
 func updateEntries(entries map[time.Time]string, d time.Time, content string) map[time.Time]string {

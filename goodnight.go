@@ -48,8 +48,14 @@ func goodnight(configPath string) error {
 	// Stamp day's rubberduck
 	n := time.Now()
 	d, t := initDatetime(n)
-	f := initFile(n)
-	stamp(f, d, t, configPath)
+	f, err := initFile(n)
+	if err != nil {
+		return err
+	}
+	err = stamp(f, d, t, configPath)
+	if err != nil {
+		return err
+	}
 
 	// Append goodnight Q&A
 	file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)

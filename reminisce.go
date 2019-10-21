@@ -2,7 +2,7 @@ package main
 
 import "time"
 
-func reminisce(configPath string) {
+func reminisce(configPath string) (err error) {
 	now := time.Now()
 	dates := make([]time.Time, 0)
 	for i := -100; i < 0; i++ {
@@ -10,9 +10,13 @@ func reminisce(configPath string) {
 	}
 	dates = append(dates, now.AddDate(0, -6, 0))
 	for _, date := range dates {
-		f := initFile(date)
+		f, err := initFile(date)
+		if err != nil {
+			return err
+		}
 		if Exists(f) {
 			load(f, configPath)
 		}
 	}
+	return err
 }
