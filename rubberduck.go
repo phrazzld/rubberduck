@@ -37,13 +37,13 @@ func initFile(t time.Time) string {
 	return filepath.Join(dir, file)
 }
 
-func stamp(f, d, t, confPath string) error {
-    conf, err := loadConfiguration(confPath)
-    if err != nil {
-        return err
-    }
-    numLines := conf.TerminalHistoryNumLines
-    historyFile := conf.TerminalHistoryFile
+func stamp(f, d, t, configPath string) error {
+	conf, err := loadConfiguration(configPath)
+	if err != nil {
+		return err
+	}
+	numLines := conf.TerminalHistoryNumLines
+	historyFile := conf.TerminalHistoryFile
 	// Make (date)timestamp string
 	var stamp string
 	if !Exists(f) {
@@ -71,16 +71,16 @@ func stamp(f, d, t, confPath string) error {
 	// Open file for writing
 	file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-        return err
+		return err
 	}
 	defer file.Close()
 	// Stamp it
 	_, err = file.WriteString(stamp)
 	if err != nil {
-        return err
+		return err
 	}
 	file.Sync()
-    return err
+	return err
 }
 
 // getTerminalHistory returns the output from `history` as a slice of strings
@@ -115,12 +115,12 @@ func min(a, b int) int {
 	return b
 }
 
-func load(f, confPath string) error {
-    conf, err := loadConfiguration(confPath)
-    if err != nil {
-        return err
-    }
-    editor := conf.Editor
+func load(f, configPath string) error {
+	conf, err := loadConfiguration(configPath)
+	if err != nil {
+		return err
+	}
+	editor := conf.Editor
 	// Launch editor for the note
 	cmd := exec.Command(editor, f)
 	cmd.Stdin = os.Stdin
@@ -128,26 +128,26 @@ func load(f, confPath string) error {
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
-        return err
+		return err
 	}
-    return err
+	return err
 }
 
-func rubberduck(confPath string) error {
+func rubberduck(configPath string) error {
 	// Initialize and format current time
 	n := time.Now()
 	d, t := initDatetime(n)
 	// Initialize the note
 	f := initFile(n)
 	// Stamp with timestamp and terminal history
-	err := stamp(f, d, t, confPath)
-    if err != nil {
-        return err
-    }
+	err := stamp(f, d, t, configPath)
+	if err != nil {
+		return err
+	}
 	// Load the note
-	err = load(f, confPath)
-    if err != nil {
-        return err
-    }
-    return err
+	err = load(f, configPath)
+	if err != nil {
+		return err
+	}
+	return err
 }

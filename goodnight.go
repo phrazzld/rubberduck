@@ -10,12 +10,12 @@ import (
 )
 
 func getPrompts(configPath string) ([]string, error) {
-    var prompts []string
-    conf, err := loadConfiguration(configPath)
-    if err != nil {
-        return prompts, err
-    }
-    prompts = conf.GoodnightPrompts
+	var prompts []string
+	conf, err := loadConfiguration(configPath)
+	if err != nil {
+		return prompts, err
+	}
+	prompts = conf.GoodnightPrompts
 	return prompts, err
 }
 
@@ -32,15 +32,15 @@ func goodnight(configPath string) error {
 	fmt.Println("But before you hit the hay, a quick touch base?")
 	time.Sleep(time.Second / 2)
 
-    prompts, err := getPrompts(configPath)
-    if err != nil {
-        return err
-    }
+	prompts, err := getPrompts(configPath)
+	if err != nil {
+		return err
+	}
 	for _, prompt := range prompts {
 		fmt.Println("\n" + prompt)
 		answer, err := reader.ReadString('\n')
 		if err != nil {
-            return err
+			return err
 		}
 		goodnightContent += "> " + prompt + "\n" + answer + "\n"
 	}
@@ -54,13 +54,13 @@ func goodnight(configPath string) error {
 	// Append goodnight Q&A
 	file, err := os.OpenFile(f, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-        return err
+		return err
 	}
 	defer file.Close()
 	_, err = file.WriteString(goodnightContent)
 	if err != nil {
-        return err
+		return err
 	}
 	file.Sync()
-    return err
+	return err
 }

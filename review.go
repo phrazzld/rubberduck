@@ -4,7 +4,7 @@ package main
 
 import "time"
 
-func review(confPath string) {
+func review(configPath string) {
 	var dates timeSlice
 	now := time.Now()
 	dates = append(dates, now.AddDate(0, -3, 0))
@@ -14,7 +14,7 @@ func review(confPath string) {
 	for _, date := range dates {
 		f := initFile(date)
 		if Exists(f) {
-			load(f, confPath)
+			load(f, configPath)
 		}
 	}
 }
