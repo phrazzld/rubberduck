@@ -26,6 +26,7 @@ func createNotesDir(homeDir string) (notesDir string, err error) {
 	return notesDir, err
 }
 
+// TODO: Rename to something that actually describes this functions behavior
 func initFile(t time.Time) (f string, err error) {
 	usr, err := user.Current()
 	if err != nil {

@@ -57,6 +57,12 @@ Talk through the day's ups and downs, and plan for tomorrow.
 
 `rubberduck goodnight`
 
+### retro
+
+Reflect on the challenges and achievements of the past week.
+
+`rubberduck retro`
+
 ## Testing
 
 ```

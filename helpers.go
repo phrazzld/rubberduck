@@ -27,3 +27,10 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+func appendNewline(s string, n int) string {
+	for i := 0; i < n; i++ {
+		s += "\n"
+	}
+	return s
+}
