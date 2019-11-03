@@ -2,7 +2,6 @@
 
 Ad-hoc journaling at the command line.
 
-
 ## Install
 
 [Set up your Go environment](https://golang.org/doc/install). Make sure you have the following lines in your **.profile**:
@@ -15,7 +14,6 @@ export PATH="$PATH:$GOPATH/bin"
 Then run:
 
 `go get github.com/phrazzld/rubberduck`
-
 
 ## Usage
 
@@ -59,7 +57,6 @@ Talk through the day's ups and downs, and plan for tomorrow.
 
 `rubberduck goodnight`
 
-
 ## Testing
 
 ```
@@ -71,4 +68,5 @@ go tool -cover -html=c.out
 ```
 
 ## License
+
 [MIT](https://opensource.org/licenses/MIT)
