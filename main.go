@@ -44,6 +44,11 @@ func main() {
 			if err != nil {
 				log.Fatalln(err)
 			}
+		case "retro":
+			err = retro(configPath)
+			if err != nil {
+				log.Fatalln(err)
+			}
 		default:
 			log.Fatalln("Unrecognized command", os.Args[1])
 			os.Exit(1)
