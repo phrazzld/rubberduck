@@ -1,4 +1,5 @@
-// Helper tests, examples, and benchmarks
+// rubberduck/helpers_test.go
+
 package main
 
 import (
@@ -7,21 +8,21 @@ import (
 )
 
 func TestExists(t *testing.T) {
-	file := "stub"
+	file := "helpers_test.go"
 	if !Exists(file) {
-		t.Error("got something wanted something else")
+		t.Error("Expected helpers_test.go to exist (since that's, y'know, me, and Descartes seems like a smart dude).")
 	}
 }
 
 func ExampleExists() {
-	file := "stub"
+	file := "helpers_test.go"
 	fmt.Println(Exists(file))
 	// Output:
 	// true
 }
 
 func BenchmarkExists(b *testing.B) {
-	file := "stub"
+	file := "helpers_test.go"
 	for i := 0; i < b.N; i++ {
 		Exists(file)
 	}
