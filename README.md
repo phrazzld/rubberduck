@@ -29,12 +29,6 @@ Set a few preferences, including your editor and whether or not to include a few
 
 `rubberduck config`
 
-### review
-
-Review recent entries (default opens entries from three months ago, one month ago, one week ago, and yesterday):
-
-`rubberduck review`
-
 ### reminisce
 
 Review old entries: (default opens entries from each year ago, and six months ago):

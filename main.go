@@ -29,8 +29,6 @@ func main() {
 			if err != nil {
 				log.Fatalln(err)
 			}
-		case "review":
-			review(configPath)
 		case "reminisce":
 			reminisce(configPath)
 		case "search":
