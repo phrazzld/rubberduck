@@ -30,7 +30,7 @@ func writeConfigObjectToFile(conf Config, configPath string) error {
 func setDefaultConfiguration(configPath string) error {
 	conf := Config{
 		Editor:                  "nvim",
-		EditorOpts:              "+Goyo",
+		EditorOpts:              "",
 		TerminalHistoryEnabled:  true,
 		TerminalHistoryFile:     ".zsh_history",
 		TerminalHistoryNumLines: 4,
